@@ -49,9 +49,6 @@ namespace koen_koelkast
 
                 i++;
             }
-
-            Console.WriteLine(end.koelkastX());
-            Console.WriteLine(end.koelkastY());
             State state = FindPath(ref states, field, end, currentState);
             int count = 0;
             if (state.CompareKoen(new State(0, 0, 0, 0)))
@@ -60,10 +57,27 @@ namespace koen_koelkast
             }
             else
             {
+                string directions = "";
                 while (states[state].state != 0)
                 {
                     count++;
                     state = states[state];
+                    if (state.directionToHere == 00000001)
+                    {
+                        directions += "N";
+                    }
+                    else if(state.directionToHere == 00000010)
+                    {
+                        directions += "S";
+                    }
+                    else if (state.directionToHere == 00000100)
+                    {
+                        directions += "W";
+                    }
+                    else if (state.directionToHere == 00000101)
+                    {
+                        directions += "E";
+                    }
                 }
 
                 if (outputMode == "L")
@@ -72,8 +86,9 @@ namespace koen_koelkast
                 }
                 else if (outputMode == "P")
                 {
+                    //directions.Reverse();
                     Console.WriteLine(count);
-                    Console.WriteLine("not yet implemented");
+                    Console.WriteLine(directions);
                 }
             }
         }
@@ -106,8 +121,6 @@ namespace koen_koelkast
                     if (s.CompareFridge(end))
                     {
                         states.Add(s, u);
-                        Console.WriteLine("----------------------");
-                        Console.WriteLine(s.koenX() + " : " + s.koenY() + " ---- " + s.koelkastX() + " : " + s.koelkastY() + " ------ " + (s.state & 65535));
                         return s;
                     }
 
@@ -130,20 +143,24 @@ namespace koen_koelkast
             try
             {
                 string obstacle = field[s.koenY()][(int)s.koenX()].ToString();
-                string pattern = @"^[A-Z]{1}$";
-                if (Regex.IsMatch(obstacle, pattern))
+                if (obstacle == "?" || obstacle == "!" || obstacle == ".")
                 {
-                    return true;
+                    return false;
                 }
                 obstacle = field[s.koelkastY()][(int)s.koelkastX()].ToString();
-                return Regex.IsMatch(obstacle, pattern);
+                if (obstacle == "?" || obstacle == "!" || obstacle == ".")
+                {
+                    return false;
+                }
+                return true;
             }
-            catch { return false; }
+            catch { return true; }
         }
 
         static State North(State prev)
         {
             prev.state -= (1 << 16);
+            prev.directionToHere = 00000001;
             if (prev.state >> 16 == (prev.state & 65535))
             {
                 prev.state -= 1;
@@ -154,6 +171,7 @@ namespace koen_koelkast
         static State South(State prev)
         {
             prev.state += 1 << 16;
+            prev.directionToHere = 00000010;
             if (prev.state >> 16 == (prev.state & 65535))
             {
                 prev.state += 1;
@@ -164,6 +182,7 @@ namespace koen_koelkast
         static State West(State prev)
         {
             prev.state -= (1 << 24);
+            prev.directionToHere = 00000100;
             if (prev.state >> 16 == (prev.state & 65535))
             {
                 prev.state -= 1 << 8;
@@ -174,6 +193,7 @@ namespace koen_koelkast
         static State East(State prev)
         {
             prev.state += 1 << 24;
+            prev.directionToHere = 00000101;
             if (prev.state >> 16 == (prev.state & 65535))
             {
                 prev.state += 1 << 8;
@@ -190,9 +210,11 @@ namespace koen_koelkast
             state += koenY << 16;
             state += koelkastX << 8;
             state += koelkastY;
+            directionToHere = 0;
         }
         
         public uint state { get; set; }
+        public byte directionToHere { get; set; }
 
         public bool CompareKoen(object obj)
         {
@@ -208,7 +230,7 @@ namespace koen_koelkast
         {
             if (other is State s)
             {
-                if (s.koelkastX() == koelkastX() && s.koelkastY() == koelkastY())
+                if ((s.state & 65535) == (state & 65535))
                 {
                     return true;
                 }
