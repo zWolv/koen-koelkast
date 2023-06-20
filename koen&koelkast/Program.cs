@@ -49,6 +49,9 @@ namespace koen_koelkast
 
                 i++;
             }
+
+            Console.WriteLine(end.koelkastX());
+            Console.WriteLine(end.koelkastY());
             State state = FindPath(ref states, field, end, currentState);
             int count = 0;
             if (state.CompareKoen(new State(0, 0, 0, 0)))
@@ -57,16 +60,17 @@ namespace koen_koelkast
             }
             else
             {
-                while (!state.CompareKoen(currentState))
+                while (states[state].state != 0)
                 {
                     count++;
                     state = states[state];
                 }
-                if (outputMode == "P")
+
+                if (outputMode == "L")
                 {
                     Console.WriteLine(count);
                 }
-                else if (outputMode == "L")
+                else if (outputMode == "P")
                 {
                     Console.WriteLine(count);
                     Console.WriteLine("not yet implemented");
@@ -94,7 +98,7 @@ namespace koen_koelkast
                         continue;
                     }
 
-                    if (IsObstacle(field, s))
+                    if (IsObstacle(ref field, s))
                     {
                         continue;
                     }
@@ -102,7 +106,8 @@ namespace koen_koelkast
                     if (s.CompareFridge(end))
                     {
                         states.Add(s, u);
-                        //Console.WriteLine(s.koenX() + " : " + s.koenY() + " ---- " + s.koelkastX() + " : " + s.koelkastY());
+                        Console.WriteLine("----------------------");
+                        Console.WriteLine(s.koenX() + " : " + s.koenY() + " ---- " + s.koelkastX() + " : " + s.koelkastY() + " ------ " + (s.state & 65535));
                         return s;
                     }
 
@@ -112,7 +117,7 @@ namespace koen_koelkast
                     }
                     stateQueue.Enqueue(s);
                     states.Add(s, u);
-                    Console.WriteLine(s.koenX() + " : " + s.koenY() + " ---- " + s.koelkastX() + " : " + s.koelkastY());
+                    //Console.WriteLine(s.koenX() + " : " + s.koenY() + " ---- " + s.koelkastX() + " : " + s.koelkastY());
                 }
                 newStates.Clear();
             }
@@ -120,7 +125,7 @@ namespace koen_koelkast
             return new State(0,0,0,0);
         }
 
-        static bool IsObstacle(string[] field, State s)
+        static bool IsObstacle(ref string[] field, State s)
         {
             try
             {
@@ -130,7 +135,6 @@ namespace koen_koelkast
                 {
                     return true;
                 }
-
                 obstacle = field[s.koelkastY()][(int)s.koelkastX()].ToString();
                 return Regex.IsMatch(obstacle, pattern);
             }
@@ -219,16 +223,16 @@ namespace koen_koelkast
 
         public uint koenY()
         {
-            return (state >> 16) & 255;
+            return (state << 8) >> 24;
         }
 
         public uint koelkastX()
         {
-            return (state & 65535) >> 8;
+            return (state << 16) >> 24;
         }
 
         public uint koelkastY()
         {
-            return(state & 65535) & 255;
+            return(state << 24) >> 24;
         }
     }
